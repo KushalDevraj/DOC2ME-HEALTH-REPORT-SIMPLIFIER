@@ -1,0 +1,52 @@
+/Users/kushaldevraj/Downloads/Medical_Jargon_Simplification-main/frontend/.venv/lib/python3.9/site-packages/urllib3/__init__.py:35: NotOpenSSLWarning: urllib3 v2 only supports OpenSSL 1.1.1+, currently the 'ssl' module is compiled with 'LibreSSL 2.8.3'. See: https://github.com/urllib3/urllib3/issues/3020
+  warnings.warn(
+ * Serving Flask app 'main'
+ * Debug mode: on
+[31m[1mWARNING: This is a development server. Do not use it in a production deployment. Use a production WSGI server instead.[0m
+ * Running on all addresses (0.0.0.0)
+ * Running on http://127.0.0.1:5001
+ * Running on http://192.168.253.44:5001
+[33mPress CTRL+C to quit[0m
+ * Restarting with stat
+/Users/kushaldevraj/Downloads/Medical_Jargon_Simplification-main/frontend/.venv/lib/python3.9/site-packages/urllib3/__init__.py:35: NotOpenSSLWarning: urllib3 v2 only supports OpenSSL 1.1.1+, currently the 'ssl' module is compiled with 'LibreSSL 2.8.3'. See: https://github.com/urllib3/urllib3/issues/3020
+  warnings.warn(
+ * Debugger is active!
+ * Debugger PIN: 177-282-798
+127.0.0.1 - - [30/Mar/2026 14:17:11] "GET / HTTP/1.1" 200 -
+127.0.0.1 - - [30/Mar/2026 14:18:44] "GET /jargon HTTP/1.1" 200 -
+127.0.0.1 - - [30/Mar/2026 14:18:48] "GET /jargon HTTP/1.1" 200 -
+127.0.0.1 - - [30/Mar/2026 14:18:49] "GET /text HTTP/1.1" 200 -
+127.0.0.1 - - [30/Mar/2026 14:18:51] "GET /chat HTTP/1.1" 200 -
+127.0.0.1 - - [30/Mar/2026 14:18:52] "GET /reports HTTP/1.1" 200 -
+127.0.0.1 - - [30/Mar/2026 14:19:00] "POST /chat-interaction/ HTTP/1.1" 200 -
+127.0.0.1 - - [30/Mar/2026 14:19:03] "GET /reports HTTP/1.1" 200 -
+127.0.0.1 - - [30/Mar/2026 14:19:03] "GET /reports HTTP/1.1" 200 -
+127.0.0.1 - - [30/Mar/2026 14:21:15] "POST /upload-pdf/ HTTP/1.1" 200 -
+127.0.0.1 - - [30/Mar/2026 15:22:11] "GET / HTTP/1.1" 200 -
+127.0.0.1 - - [30/Mar/2026 15:22:21] "GET /jargon HTTP/1.1" 200 -
+127.0.0.1 - - [30/Mar/2026 15:22:22] "GET /reports HTTP/1.1" 200 -
+Python(52335) MallocStackLogging: can't turn off malloc stack logging because it was not enabled.
+127.0.0.1 - - [30/Mar/2026 15:23:58] "POST /upload-pdf/ HTTP/1.1" 200 -
+127.0.0.1 - - [30/Mar/2026 15:32:36] "GET /text HTTP/1.1" 200 -
+127.0.0.1 - - [30/Mar/2026 15:32:37] "GET / HTTP/1.1" 200 -
+127.0.0.1 - - [30/Mar/2026 15:33:54] "GET /text HTTP/1.1" 200 -
+127.0.0.1 - - [30/Mar/2026 15:34:32] "POST /upload-text/ HTTP/1.1" 200 -
+127.0.0.1 - - [30/Mar/2026 15:38:08] "GET /chat HTTP/1.1" 200 -
+127.0.0.1 - - [30/Mar/2026 15:38:18] "POST /chat-interaction/ HTTP/1.1" 200 -
+127.0.0.1 - - [30/Mar/2026 15:39:32] "POST /chat-interaction/ HTTP/1.1" 200 -
+127.0.0.1 - - [30/Mar/2026 16:15:48] "GET / HTTP/1.1" 200 -
+127.0.0.1 - - [30/Mar/2026 16:19:21] "GET /reports HTTP/1.1" 200 -
+127.0.0.1 - - [30/Mar/2026 16:19:43] "GET / HTTP/1.1" 200 -
+127.0.0.1 - - [30/Mar/2026 16:19:56] "GET / HTTP/1.1" 200 -
+127.0.0.1 - - [30/Mar/2026 16:19:56] "GET / HTTP/1.1" 200 -
+127.0.0.1 - - [30/Mar/2026 16:20:26] "GET / HTTP/1.1" 200 -
+127.0.0.1 - - [30/Mar/2026 16:20:26] "GET / HTTP/1.1" 200 -
+127.0.0.1 - - [30/Mar/2026 16:20:30] "GET /reports HTTP/1.1" 200 -
+Python(53413) MallocStackLogging: can't turn off malloc stack logging because it was not enabled.
+127.0.0.1 - - [30/Mar/2026 16:21:57] "POST /upload-pdf/ HTTP/1.1" 200 -
+127.0.0.1 - - [30/Mar/2026 16:22:46] "GET /text HTTP/1.1" 200 -
+127.0.0.1 - - [30/Mar/2026 16:22:46] "GET /text HTTP/1.1" 200 -
+127.0.0.1 - - [30/Mar/2026 16:23:29] "POST /upload-text/ HTTP/1.1" 200 -
+127.0.0.1 - - [30/Mar/2026 16:24:05] "GET /chat HTTP/1.1" 200 -
+127.0.0.1 - - [30/Mar/2026 16:24:17] "POST /chat-interaction/ HTTP/1.1" 200 -
+127.0.0.1 - - [01/Apr/2026 15:44:57] "POST /chat-interaction/ HTTP/1.1" 200 -

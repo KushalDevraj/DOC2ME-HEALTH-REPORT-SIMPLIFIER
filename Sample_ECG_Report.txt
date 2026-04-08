@@ -1,0 +1,10 @@
+12-LEAD ECG SUMMARY
+--------------------------------------------------
+ECG obtained for chest discomfort and palpitations.
+
+RESULTS:
+Heart Rate: 115 * BPM (Ref: 60 - 100)
+PR Interval: 0.14 sec (Ref: 0.12 - 0.20)
+ST Segment: Elevation * V1-V4 (Ref: Isoelectric)
+
+IMPRESSION: Sinus Tachycardia with ST-segment elevation in precordial leads. Possible acute anterior wall Myocardial Infarction. EMERGENCY correlation required.

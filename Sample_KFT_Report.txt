@@ -1,0 +1,10 @@
+KIDNEY FUNCTION TEST (KFT)
+--------------------------------------------------
+Patient presenting with persistent edema and hypertension.
+
+RESULTS:
+Serum Creatinine: 2.8 * mg/dL (Ref: 0.7 - 1.3)
+BUN: 52 * mg/dL (Ref: 7 - 20)
+Uric Acid: 9.2 * mg/dL (Ref: 3.4 - 7.0)
+
+IMPRESSION: Significant Renal Impairment noted with Azotemia and Hyperuricemia. Correlation with GFR and Ultrasound KUB is required.

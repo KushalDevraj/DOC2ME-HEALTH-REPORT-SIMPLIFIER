@@ -1,0 +1,36 @@
+Loading weights:   0%|          | 0/257 [00:00<?, ?it/s]Loading weights: 100%|██████████| 257/257 [00:00<00:00, 4965.00it/s]
+Writing model shards:   0%|          | 0/1 [00:00<?, ?it/s]Writing model shards: 100%|██████████| 1/1 [00:02<00:00,  2.94s/it]Writing model shards: 100%|██████████| 1/1 [00:02<00:00,  2.94s/it]
+INFO:     Started server process [48776]
+INFO:     Waiting for application startup.
+INFO:     Application startup complete.
+INFO:     Uvicorn running on http://0.0.0.0:8000 (Press CTRL+C to quit)
+INFO:     127.0.0.1:52951 - "GET / HTTP/1.1" 200 OK
+/Users/kushaldevraj/Downloads/Medical_Jargon_Simplification-main/backend/.venv/lib/python3.13/site-packages/langchain_core/_api/deprecation.py:139: LangChainDeprecationWarning: The class `LLMChain` was deprecated in LangChain 0.1.17 and will be removed in 0.3.0. Use RunnableSequence, e.g., `prompt | llm` instead.
+  warn_deprecated(
+INFO:     127.0.0.1:52954 - "POST /simplify_data HTTP/1.1" 200 OK
+INFO:     127.0.0.1:52964 - "GET /feedback_random HTTP/1.1" 200 OK
+INFO:     127.0.0.1:52967 - "GET /feedback_random HTTP/1.1" 200 OK
+INFO:     127.0.0.1:52970 - "GET /feedback_random HTTP/1.1" 200 OK
+INFO:     127.0.0.1:52975 - "GET /simplify_reset_context HTTP/1.1" 200 OK
+INFO:     127.0.0.1:52978 - "POST /simplify_text_llm_stream HTTP/1.1" 200 OK
+INFO:     127.0.0.1:52989 - "GET /get_feedback?feedback=Leukocytosis:%20High%20WBC%20count%20indicating%20infection.&uuid=680c1f78-95b7-4891-9f91-ec3c850190a9 HTTP/1.1" 200 OK
+INFO:     127.0.0.1:53018 - "POST /simplify_report_llm HTTP/1.1" 200 OK
+INFO:     127.0.0.1:53798 - "GET /feedback_random HTTP/1.1" 200 OK
+INFO:     127.0.0.1:53805 - "POST /simplify_report_llm HTTP/1.1" 200 OK
+INFO:     127.0.0.1:54000 - "POST /simplify_data HTTP/1.1" 200 OK
+INFO:     127.0.0.1:54047 - "GET /simplify_reset_context HTTP/1.1" 200 OK
+INFO:     127.0.0.1:54050 - "POST /simplify_text_llm_stream HTTP/1.1" 200 OK
+INFO:     127.0.0.1:54061 - "POST /simplify_text_llm_stream HTTP/1.1" 200 OK
+INFO:     127.0.0.1:54635 - "POST /simplify_report_llm HTTP/1.1" 200 OK
+INFO:     127.0.0.1:54680 - "POST /simplify_data HTTP/1.1" 200 OK
+INFO:     127.0.0.1:54693 - "GET /simplify_reset_context HTTP/1.1" 200 OK
+INFO:     127.0.0.1:54696 - "POST /simplify_text_llm_stream HTTP/1.1" 200 OK
+INFO:     127.0.0.1:58291 - "POST /simplify_data HTTP/1.1" 200 OK
+INFO:     127.0.0.1:58347 - "POST /simplify_data HTTP/1.1" 200 OK
+INFO:     127.0.0.1:49218 - "POST /simplify_text_llm_stream HTTP/1.1" 200 OK
+INFO:     Shutting down
+INFO:     Waiting for application shutdown.
+INFO:     Application shutdown complete.
+INFO:     Finished server process [48776]
+/Library/Frameworks/Python.framework/Versions/3.13/lib/python3.13/multiprocessing/resource_tracker.py:324: UserWarning: resource_tracker: There appear to be 1 leaked semaphore objects to clean up at shutdown: {'/loky-48776-_54lilb6'}
+  warnings.warn(

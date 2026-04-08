@@ -1,0 +1,10 @@
+CHEST X-RAY (PA VIEW)
+--------------------------------------------------
+Patient presenting with persistent cough and tachycardia.
+
+RESULTS:
+CTR: 0.62 * Ratio (Ref: < 0.50)
+Costophrenic Angles: Blunted *  (Ref: Clear)
+Lung Fields: Bibasilar Opacity *  (Ref: Clear)
+
+IMPRESSION: Findings suggestive of Cardiomegaly and minor Bilateral Pleural Effusion. Clinical correlation with cardiac profile recommended.

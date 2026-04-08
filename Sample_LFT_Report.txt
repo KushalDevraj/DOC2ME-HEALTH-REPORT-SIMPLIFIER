@@ -1,0 +1,10 @@
+LIVER FUNCTION TEST (LFT)
+--------------------------------------------------
+Patient presenting with abdominal pain and jaundice.
+
+RESULTS:
+SGOT (AST): 145 * U/L (Ref: 5 - 40)
+SGPT (ALT): 180 * U/L (Ref: 7 - 56)
+Bilirubin Total: 3.2 * mg/dL (Ref: 0.1 - 1.2)
+
+IMPRESSION: Elevated transaminases and hyperbilirubinemia. Suggestive of acute hepatocellular injury/hepatitis.

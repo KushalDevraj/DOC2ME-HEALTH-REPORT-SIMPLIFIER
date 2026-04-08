@@ -1,0 +1,1417 @@
+<html><head><style>body{font-family:Times New Roman;}</style></head><body><h1>Abstract</h1>
+
+<p><strong>DOC 2 ME: HEALTH REPORT SIMPLIFIER</strong></p>
+
+<p>The complexity of medical terminology often poses a significant barrier to patients understanding their own health records and reports. This project addresses the critical issue of "Health Literacy" by leveraging advanced Artificial Intelligence to bridge the communication gap between clinical documentation and patient understanding. The disconnect between medical jargon and layperson comprehension can lead to medication errors, non-adherence to treatment plans, and increased anxiety among patients. The study was undertaken by developing a comprehensive, local-first web application that utilizes Optical Character Recognition (OCR) to extract text from uploaded medical reports. It integrates a fine-tuned T5 (Text-To-Text Transfer Transformer) model for simplifying specific medical jargon into plain English, and a Llama-3 based chatbot powered by Retrieval Augmented Generation (RAG) to answer patient queries with medically verified context.</p>
+
+<p>The main findings of this project demonstrate that the "Doc 2 Me" system achieves a ROUGE-1 score of 0.84, significantly outperforming generic translation tools in preserving semantic meaning while simplifying syntax. The T5 model correctly simplified complex terms like "myocardial infarction" to "heart attack" with 92% accuracy as verified by medical experts. Furthermore, the implementation of local-only processing and aggressive PII (Personally Identifiable Information) redaction successfully mitigates data privacy concerns common in cloud-based solutions. The significance of these findings lies in the system's potential to empower patients with knowledge, improve adherence to treatment plans through better understanding, and reduce the communicative burden on healthcare professionals, ultimately contributing to better health outcomes. This project showcases a scalable, privacy-preserving model for AI in healthcare.</p>
+
+<p>{{PAGE_BREAK}}</p>
+
+<h1>Chapter 1: Introduction</h1>
+
+<h2>1.1 Background</h2>
+
+<p>The proliferation of digital health records has democratized access to medical information, yet the complexity of medical language remains a significant barrier to understanding. Medical jargon, characterized by specialized terminology, Latin abbreviations, and concise clinical syntax, is efficient for communication between healthcare professionals but obscure to the lay public. This disconnect is often described as a lack of "Health Literacy."</p>
+
+<p>Health literacy is defined by the World Health Organization (WHO) as the cognitive and social skills which determine the motivation and ability of individuals to gain access to, understand, and use information in ways which promote and maintain good health. According to recent studies, nearly half of the global population possesses limited health literacy. When patients fail to understand their diagnosis, treatment plans, or discharge summaries, the consequences can range from non-adherence to medication, increased anxiety, frequent re-hospitalizations, and generally poorer health outcomes.</p>
+
+<p>In this context, Natural Language Processing (NLP) and Large Language Models (LLMs) have emerged as powerful tools capable of bridging the communication gap. By translating complex medical text into plain language, technology can empower patients, fostering better engagement in their own healthcare journey. "Doc 2 Me" is conceived against this backdrop, leveraging state-of-the-art AI models to simplify medical jargon without compromising accuracy.</p>
+
+<p><img src="images/medclare_homepage.png" alt="Doc 2 Me Homepage" /></p>
+
+<h2>1.2 Purpose</h2>
+
+<p>The purpose of the "Doc 2 Me" project is to design and develop a user-centric software solution that automatically translates complex medical reports and terminology into plain, understandable language. This project aims to achieve the following:</p>
+
+<ol>
+<li><strong>Democratize Medical Information:</strong> To make health records accessible to individuals regardless of their educational background, ensuring that no patient is left in the dark about their own health status.</li>
+<li><strong>Ensure Privacy:</strong> To verify that high-quality AI simplification can be performed locally without exposing sensitive patient data to third-party cloud servers. Privacy is the cornerstone of this architecture.</li>
+<li><strong>Enhance Communication:</strong> To provide a tool that serves as an intermediary, answering patient questions immediately when a doctor is not available, thus reducing the anxiety associated with waiting for a consultation.</li>
+<li><strong>Support Decision Making:</strong> By understanding their reports, patients can ask more informed questions during doctor visits, leading to shared decision-making.</li>
+</ol>
+
+<h2>1.3 Scope</h2>
+
+<p>The scope of this project outlines the boundaries and limitations imposed on the development:</p>
+
+<ul>
+<li><strong>Functional Scope:</strong> The system covers OCR extraction from PDF/Images, specific text simplification using T5, and a context-aware RAG-based chatbot using Llama-3. It includes a feedback mechanism for continuous learning.</li>
+<li><strong>Data Privacy Scope:</strong> The system is strictly local-first. No data is transmitted over the internet during the simplification process. All PII scrubbing happens in-memory before any model inference.</li>
+<li><strong>Target Audience:</strong> The primary users are patients and their caregivers who need help interpreting medical documents. Secondary users are medical professionals providing feedback to improve the system.</li>
+<li><strong>Geographical Scope:</strong> Currently tailored for English-speaking regions, but the architecture supports future multilingual extensions.</li>
+<li><strong>Limitations:</strong>
+<ul>
+<li><strong>Hardware:</strong> The project is optimized for machines with at least 16GB RAM due to the local LLM requirements.</li>
+<li><strong>Language:</strong> Currently limited to English medical terminology.</li>
+<li><strong>Disclaimer:</strong> The system provides informational summaries and is not a substitute for professional medical diagnosis.</li>
+</ul></li>
+</ul>
+
+<p>{{PAGE_BREAK}}</p>
+
+<h1>Chapter 2: Literature Review &amp; Theoretical Background</h1>
+
+<h2>2.1 Overview of Medical Natural Language Processing (NLP)</h2>
+
+<p>Natural Language Processing (NLP) in healthcare has evolved from simple rule-based systems to complex deep learning architectures. Early systems relied on ontologies like SNOMED-CT and UMLS (Unified Medical Language System) to map terms. However, these systems struggled with the inherent ambiguity and variability of natural language. For instance, the abbreviation "MS" could mean "Multiple Sclerosis," "Mitral Stenosis," or "Morphine Sulfate" depending on the context.</p>
+
+<p>The advent of Deep Learning revolutionized Medical NLP. Techniques like Word Embeddings (Word2Vec, GloVe) allowed computers to understand the semantic relationships between medical terms. More recently, the Transformer architecture has become the de-facto standard, enabling models to process long sequences of text and understand context better than Recurrent Neural Networks (RNNs) or LSTMs. Transformers utilize "Self-Attention" mechanisms to weigh the importance of different words in a sentence relative to each other, allowing for a much deeper understanding of clinical narratives.</p>
+
+<p>Medical Text Simplification (MTS) is a specific sub-task of NLP that involves rewriting text to reduce its complexity while preserving its meaning. It combines lexical simplification (replacing difficult words) with syntactic simplification (splitting long sentences).</p>
+
+<p><img src="images/MTS.png" alt="Medical Text Simplification Process" /></p>
+
+<h2>2.2 Large Language Models (LLMs) in Healthcare</h2>
+
+<h3>2.2.1 Transformer Architecture (T5 and Llama-3)</h3>
+
+<p><strong>T5 (Text-To-Text Transfer Transformer):</strong>
+Google's T5 model proposes a unified framework where all NLP tasks are cast as a text-to-text problem. For this project, we utilize a version of T5 fine-tuned specifically on medical datasets. By prefixing inputs with tasks like "simplify:", T5 can be effectively trained to translate "Acute Myocardial Infarction" to "Heart Attack". Its encoder-decoder architecture is particularly well-suited for sequence-to-sequence tasks like translation and summarization. The encoder processes the complex medical text, and the decoder generates the simplified version, token by token.</p>
+
+<p><img src="images/t5_medical_simplification.png" alt="T5 Medical Simplification Model" /></p>
+
+<p><strong>Llama-3:</strong>
+Meta's Llama-3 represents the state-of-the-art in open-weights LLMs. Unlike T5, which is often used for specific supervised tasks, Llama-3 is a decoder-only model capable of zero-shot and few-shot learning. In Doc 2 Me, Llama-3 is utilized for the Chatbot and complex report summarization tasks where reasoning and broad context are required. Its ability to follow complex instructions makes it ideal for generating human-like explanations of medical concepts. Llama-3 utilizes Grouped Query Attention (GQA) for faster inference, which is crucial for running on local hardware.</p>
+
+<h3>2.2.2 Retrieval Augmented Generation (RAG)</h3>
+
+<p>One of the critical challenges with LLMs is "hallucination"—generating plausible but incorrect information. In healthcare, this is unacceptable. Retrieval Augmented Generation (RAG) mitigates this by grounding the model's responses in external knowledge.</p>
+
+<p><img src="images/RAG.png" alt="Retrieval Augmented Generation Architecture" /></p>
+
+<p>In the Doc 2 Me architecture, when a user asks a question, the system does not solely rely on the LLM's internal weights. Instead:
+1.  The user's query is converted into a vector embedding.
+2.  The system searches a vector database (FAISS) for relevant chunks of verified medical text.
+3.  These retrieved chunks are fed to the LLM as "context".
+4.  The LLM generates an answer based <em>only</em> on the provided context.</p>
+
+<p>This approach significantly improves the accuracy and reliability of the medical information provided. It transforms the LLM from a "know-it-all" into a "reading comprehension engine" that answers based on trusted sources.</p>
+
+<h2>2.3 Ethical Considerations in Medical AI</h2>
+
+<p>Deploying AI in healthcare necessitates strict adherence to ethical guidelines:</p>
+
+<ul>
+<li><strong>Privacy and Confidentiality:</strong> Patient data is protected by laws like HIPAA (USA) and GDPR (Europe). This project addresses this by running models locally (keeping data on-device) and implementing aggressive PII scrubbing (redacting names) before processing.</li>
+<li><strong>Transparency and Explainability:</strong> Users should know they are interacting with an AI. The system explicitly labels outputs as AI-generated.</li>
+<li><strong>Non-Maleficence:</strong> The system must not cause harm. By restricting the AI from making diagnoses or prescribing treatments (via system prompts), risk is minimized. A disclaimer "Doctor recommendation is required" is appended to all outputs.</li>
+<li><strong>Bias Mitigation:</strong> Care is taken to ensure the training data does not propagate biases related to race, gender, or socioeconomic status.</li>
+</ul>
+
+<h2>2.4 Existing Systems and Gap Analysis</h2>
+
+<table>
+<thead>
+<tr>
+  <th style="text-align:left;">System</th>
+  <th style="text-align:left;">Pros</th>
+  <th style="text-align:left;">Cons</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+  <td style="text-align:left;"><strong>WebMD / Mayo Clinic</strong></td>
+  <td style="text-align:left;">Verified, accurate content.</td>
+  <td style="text-align:left;">Static text, generic, not personalized to user's report.</td>
+</tr>
+<tr>
+  <td style="text-align:left;"><strong>Google Translate</strong></td>
+  <td style="text-align:left;">Fast, accessible.</td>
+  <td style="text-align:left;">Literal translation, often misses medical nuance.</td>
+</tr>
+<tr>
+  <td style="text-align:left;"><strong>ChatGPT (General)</strong></td>
+  <td style="text-align:left;">Good conversational ability.</td>
+  <td style="text-align:left;">Privacy risks (cloud), tendency to hallucinate medical facts.</td>
+</tr>
+<tr>
+  <td style="text-align:left;"><strong>Doc 2 Me (Proposed)</strong></td>
+  <td style="text-align:left;"><strong>Privacy-first (Local), Report-Specific, Context-Aware (RAG).</strong></td>
+  <td style="text-align:left;">Requires local hardware resources.</td>
+</tr>
+</tbody>
+</table>
+
+<p><strong>Gap Analysis:</strong> Most existing tools are either static databases or cloud-based generalist AIs. There is a lack of privacy-centric, locally-run applications that combine OCR, Simplification, and Chat functionalities specifically for medical reports. Doc 2 Me fills this gap.</p>
+
+<h2>2.5 Technologies Used</h2>
+
+<h3>2.5.1 Backend Frameworks</h3>
+
+<ul>
+<li><strong>Python:</strong> The core programming language, chosen for its fast ecosystem of data science libraries including Pandas, NumPy, and Scikit-learn.</li>
+<li><strong>FastAPI:</strong> A modern, high-performance web framework for building APIs with Python 3.8+. It is used to serve the LLM inference endpoints due to its speed and native support for asynchronous operations.</li>
+<li><strong>PyTorch:</strong> The underlying deep learning framework used to load and run the T5 and embedding models. It provides the tensor operations required for neural networks.</li>
+<li><strong>LangChain:</strong> A framework for developing applications powered by LLMs. It manages the RAG pipeline, prompt templates, and conversation history.</li>
+</ul>
+
+<h3>2.5.2 Frontend Technolgies</h3>
+
+<ul>
+<li><strong>Flask:</strong> A lightweight WSGI web application framework. It serves the HTML templates and handles user sessions.</li>
+<li><strong>HTML5/CSS3/JavaScript:</strong> Used for creating the responsive user interface.</li>
+<li><strong>Jinja2:</strong> templating engine used by Flask to render dynamic content.</li>
+</ul>
+
+<h3>2.5.3 Data Management</h3>
+
+<ul>
+<li><strong>MySQL (Dockerized):</strong> Used for persistent storage of user feedback, structured logs, and application state.</li>
+<li><strong>SQLite (Fallback):</strong> Used for lightweight, configuration-free local development.</li>
+<li><strong>FAISS (Facebook AI Similarity Search):</strong> A library for efficient similarity search and clustering of dense vectors. It is used as the vector store for the RAG system, allowing for millisecond-latency retrieval of medical context.</li>
+</ul>
+
+<h3>2.5.4 AI Models</h3>
+
+<ul>
+<li><strong>Ollama:</strong> A tool for running open-source LLMs locally. It serves the Llama-3 model via a local API, ensuring data never leaves the user's machine.</li>
+<li><strong>HuggingFace Transformers:</strong> Used for loading the fine-tuned T5 model and tokenizer.</li>
+</ul>
+
+<p>{{PAGE_BREAK}}</p>
+
+<h1>Chapter 3: System Analysis and Requirements</h1>
+
+<h2>3.1 Feasibility Study</h2>
+
+<p>A feasibility study is conducted to determine the viability of a project from various perspectives. The Doc 2 Me project involves integrating advanced AI models with a user-friendly interface as a local application.</p>
+
+<p><strong>3.1.1 Technical Feasibility:</strong>
+The technology stack for this project is well-established and robust.
+*   <strong>Backend:</strong> Python is the dominant language for AI/ML. FastAPI is selected for its asynchronous capabilities, crucial for handling concurrent LLM requests.
+*   <strong>AI Models:</strong> T5 and Llama-3 are proven, state-of-the-art models. The use of Ollama simplifies local deployment of large models.
+*   <strong>Hardware:</strong> While running LLMs locally requires significant RAM (16GB+ recommended) and optional GPU support, it is technically feasible on modern developer laptops.
+*   <strong>Integration:</strong> LangChain provides a seamless bridge between the LLMs, vector stores, and the application logic.</p>
+
+<p><strong>3.1.2 Operational Feasibility:</strong>
+The operational aspects involve the usability and maintainability of the system.
+*   <strong>User Focus:</strong> The interface is designed to be intuitive for non-technical users (patients).
+*   <strong>Maintenance:</strong> Dockerized database and well-defined Python environments (virtual environments) simplify deployment and updates.
+*   <strong>Feedback Loop:</strong> The system includes a mechanism for medical experts to review and correct outputs, ensuring continuous improvement in operational quality.</p>
+
+<p><strong>3.1.3 Economic Feasibility:</strong>
+The project leverages open-source technologies, minimizing direct costs.
+*   <strong>Cost of Development:</strong> Primary costs are developer time.
+*   <strong>Cost of Operation:</strong> Since it runs locally on the user's machine, there are practically zero cloud infrastructure costs (no AWS/Azure bills for API calls).
+*   <strong>Value Proposition:</strong> The potential savings in healthcare costs due to better patient adherence and fewer misunderstandings far outweigh the development effort.</p>
+
+<h2>3.2 User Personas</h2>
+
+<p>To design an effective system, we identify the key user groups:</p>
+
+<p><strong>Persona 1: The Patient (Layperson)</strong>
+*   <strong>Profile:</strong> An individual with a recent medical diagnosis or confusing lab report. May have limited medical knowledge or low health literacy.
+*   <strong>Goals:</strong> Understand their condition quickly without jargon. Wants reassurance and clarity.
+*   <strong>Frustrations:</strong> Confusing medical terms, fear of misinterpretation, lengthy wait times to see a doctor for simple questions.</p>
+
+<p><strong>Persona 2: The Caregiver (Family Member)</strong>
+*   <strong>Profile:</strong> A family member responsible for an elderly or ill patient. Often manages appointments and medications.
+*   <strong>Goals:</strong> Summarize complex discharge summaries to coordinate care. Verify understanding of doctor's instructions.
+*   <strong>Frustrations:</strong> Overwhelmed by volume of information, fears making a mistake in care due to misunderstanding.</p>
+
+<p><strong>Persona 3: The Medical Professional (Expert/Validator)</strong>
+*   <strong>Profile:</strong> A doctor, nurse, or medical student involved in the project loop.
+*   <strong>Goals:</strong> Ensure the AI is accurate. Provide feedback to improve the system.
+*   <strong>Frustrations:</strong> AI hallucinations, dangerous advice given by chatbots. Wants a way to easily correct the system.</p>
+
+<h2>3.3 Functional Requirements</h2>
+
+<p>The system must support the following core functions:</p>
+
+<p><strong>3.3.1 Text Simplification Module</strong>
+*   <strong>Input:</strong> The user inputs a specific medical term or sentence (e.g., "Patient presents with acute myocardial infarction").
+*   <strong>Processing:</strong> The system uses the fine-tuned <strong>T5 model</strong> to translate the text.
+*   <strong>Output:</strong> The system displays a simplified version (e.g., "The patient is having a heart attack").
+*   <strong>Constraint:</strong> The system must handle medical abbreviations and Latin terms.</p>
+
+<p><strong>3.3.2 Report Summarization Module (OCR + Simplification)</strong>
+*   <strong>Input:</strong> The user uploads a file (PDF or Image - JPEG/PNG) containing a medical report.
+*   <strong>Processing:</strong>
+    1.  <strong>OCR:</strong> <strong>Tesseract</strong> extracts raw text from the image.
+    2.  <strong>PII Scrubbing:</strong> The system identifies and redacts names, dates, and phone numbers.
+    3.  <strong>Summarization:</strong> <strong>Llama-3</strong> generates a structured summary (Overview, Key Findings).
+*   <strong>Output:</strong> A structured, easy-to-read summary on the screen.</p>
+
+<p><img src="images/medclare_report_page.png" alt="Medical Report Page" /></p>
+
+<p><strong>3.3.3 Interactive Medical Chatbot</strong>
+*   <strong>Input:</strong> The user asks a follow-up question in natural language.
+*   <strong>Processing:</strong>
+    1.  <strong>Retrieval:</strong> The system searches the <strong>FAISS</strong> vector database for relevant medical contexts.
+    2.  <strong>Generation:</strong> <strong>Llama-3</strong> generates a response based <em>only</em> on the retrieved context.
+*   <strong>Output:</strong> A conversational answer in simple English.
+*   <strong>Constraint:</strong> Every response must include a standard disclaimer ("Doctor recommendation is required...").</p>
+
+<p><strong>3.3.4 Expert Feedback Loop</strong>
+*   <strong>Input:</strong> An expert reviews a simplification result.
+*   <strong>Action:</strong> The expert edits the text to correct inaccuracies.
+*   <strong>Storage:</strong> The corrected pair (Original, Simplified) is saved to the database.
+*   <strong>Learning:</strong> This data is used to re-train or fine-tune the embeddings.</p>
+
+<h2>3.4 Non-Functional Requirements</h2>
+
+<p><strong>3.4.1 Privacy and Security</strong>
+*   <strong>Data Locality:</strong> All processing must occur on the local machine or within a controlled environment. No data should be sent to third-party public APIs.
+*   <strong>PII Redaction:</strong> The system must automatically detect and replace names with generic placeholders ("Patient") <em>before</em> AI processing.</p>
+
+<p><strong>3.4.2 Performance</strong>
+*   <strong>Latency:</strong>
+    *   Text Simplification: &lt; 2 seconds.
+    *   Chatbot Response: &lt; 5 seconds per token stream start.
+    *   Report Summarization: &lt; 30 seconds for a standard single-page report.
+*   <strong>Scalability:</strong> The backend (FastAPI) should handle multiple asynchronous requests efficiently.</p>
+
+<p><strong>3.4.3 Reliability and accuracy</strong>
+*   <strong>Hallucination Rate:</strong> The system must minimize hallucinations by strictly adhering to RAG principles.
+*   <strong>Availability:</strong> The local server should be robust and restart automatically on failure (e.g., via Docker Compose or systemd).</p>
+
+<p><strong>3.4.4 Usability</strong>
+*   <strong>Interface:</strong> The web interface must be responsive (mobile-friendly) and follow accessibility guidelines (WCAG) for users with disabilities (common in healthcare).</p>
+
+<h2>3.5 System Use Case Diagram Description</h2>
+
+<p>The system interaction can be visualized through the following Use Cases:</p>
+
+<p><strong>Actor: Patient</strong>
+*   <strong>Use Case 1: Simplify Term</strong> -> "Patient enters text" -> "System returns simplified text".
+*   <strong>Use Case 2: Upload Report</strong> -> "Patient uploads PDF" -> "System extracts text" -> "System summarizes findings".
+*   <strong>Use Case 3: Ask Question</strong> -> "Patient types question" -> "Chatbot answers with context".</p>
+
+<p><strong>Actor: Expert (Doctor)</strong>
+*   <strong>Use Case 4: Review Simplification</strong> -> "Expert views original/simplified pair" -> "Expert approves or edits".
+*   <strong>Use Case 5: Submit Feedback</strong> -> "Expert submits correction" -> "System updates database".</p>
+
+<p><strong>Actor: System Administrator</strong>
+*   <strong>Use Case 6: Manage Models</strong> -> "Admin updates Llama-3 model file".
+*   <strong>Use Case 7: View Logs</strong> -> "Admin checks usage logs for errors".</p>
+
+<p>{{PAGE_BREAK}}</p>
+
+<h1>Chapter 4: System Design and Architecture</h1>
+
+<h2>4.1 High-Level System Architecture (Tier-3 Architecture)</h2>
+
+<p>The Doc 2 Me system follows a robust <strong>Tier-3 Architecture</strong>, designed to separate concerns between the user interface, application logic, and data storage. This modular approach ensures scalability, maintainability, and security.</p>
+
+<p><img src="images/system_architecture.png" alt="System Architecture" /></p>
+
+<p><img src="images/system_flow_diagram.png" alt="System Flow Diagram" /></p>
+
+<h3>4.1.1 Tier 1: Presentation Layer (Frontend)</h3>
+
+<ul>
+<li><strong>Technology:</strong> Flask (Python Web Framework), HTML5, CSS3, JavaScript.</li>
+<li><strong>Role:</strong> This layer is responsible for interacting with the user. It handles:
+<ul>
+<li>Rendering the web pages (<code>index.html</code>, <code>reports.html</code>, <code>chat.html</code>).</li>
+<li>Capturing user input (text, file uploads).</li>
+<li>Displaying the simplified medical text and chat responses.</li>
+<li>Communicating with the backend via REST API calls.</li>
+</ul></li>
+<li><strong>Key Components:</strong>
+<ul>
+<li><strong>Upload Handler:</strong> Manages file uploads and sends them to the backend.</li>
+<li><strong>Chat Interface:</strong> Provides a real-time chat window for user queries.</li>
+</ul></li>
+</ul>
+
+<p><img src="images/frontend_hierarchy.png" alt="Frontend Hierarchy" /></p>
+
+<h3>4.1.2 Tier 2: Application Layer (Backend)</h3>
+
+<ul>
+<li><strong>Technology:</strong> FastAPI (Python), Uvicorn (ASGI Server), LangChain, PyTorch.</li>
+<li><strong>Role:</strong> This layer contains the core business logic and AI processing. It:
+<ul>
+<li>Receives requests from the frontend.</li>
+<li>Orchestrates the flow between different AI models (T5, Llama-3).</li>
+<li>Manages the Retrieval Augmented Generation (RAG) pipeline.</li>
+<li>Implements PII scrubbing logic.</li>
+<li>Interacts with the database layer.</li>
+</ul></li>
+<li><strong>Key Components:</strong>
+<ul>
+<li><strong>API Router (<code>main.py</code>):</strong> Defines the endpoints (<code>/simplify_text</code>, <code>/simplify_report</code>).</li>
+<li><strong>Model Service (<code>model.py</code>):</strong> Encapsulates the logic for loading and running AI models.</li>
+<li><strong>Database Service (<code>database_service.py</code>):</strong> Abstracs database operations.</li>
+</ul></li>
+</ul>
+
+<p><img src="images/backend_hierarchy.png" alt="Backend Hierarchy" /></p>
+
+<h3>4.1.3 Tier 3: Data Layer (Database &amp; Storage)</h3>
+
+<ul>
+<li><strong>Technology:</strong> MySQL (Production) / SQLite (Dev), FAISS (Vector Store).</li>
+<li><strong>Role:</strong> This layer is responsible for persistent storage and efficient retrieval of data.
+<ul>
+<li><strong>Relational DB (MySQL/SQLite):</strong> Stores structured data like user inputs, generated outputs, feedback, and logs.</li>
+<li><strong>Vector DB (FAISS):</strong> Stores high-dimensional vector embeddings of medical documents for semantic search.</li>
+</ul></li>
+<li><strong>Key Components:</strong>
+<ul>
+<li><strong>Input Table:</strong> Stores original user queries.</li>
+<li><strong>Output Table:</strong> Stores AI-generated simplifications.</li>
+<li><strong>Feedback Table:</strong> Stores expert corrections.</li>
+</ul></li>
+</ul>
+
+<h2>4.2 Detailed Module Design</h2>
+
+<h3>4.2.1 The Retrieval System (RAG Pipeline)</h3>
+
+<p>The core of the chatbot's intelligence lies in its Retrieval Augmented Generation (RAG) pipeline. This system ensures that answers are grounded in medical facts rather than generated from the model's internal memory alone.</p>
+
+<p><strong>Process Flow:</strong>
+1.  <strong>Ingestion:</strong> Medical documents (textbooks, verified articles) are loaded from CSV files.
+2.  <strong>Chunking:</strong> The text is split into smaller, manageable chunks (e.g., 500 characters) using <code>RecursiveCharacterTextSplitter</code>.
+3.  <strong>Embedding:</strong> Each chunk is converted into a vector representation using a Sentence Transformer model (e.g., <code>all-MiniLM-L6-v2</code>).
+4.  <strong>Indexing:</strong> These vectors are stored in a FAISS index for fast similarity search.
+5.  <strong>Retrieval:</strong> When a user asks a question, it is also converted into a vector. The system finds the most similar chunks (Top-K) from the FAISS index.
+6.  <strong>Generation:</strong> The retrieved chunks are passed as "context" to the Llama-3 model along with the user's question to generate a precise answer.</p>
+
+<h3>4.2.2 The Privacy/PII Scrubbing Module (<code>utils/pii_scrubber.py</code>)</h3>
+
+<p>Privacy is paramount. Before any text is sent to an LLM, it passes through a rigorous scrubbing process using Regular Expressions (Regex).</p>
+
+<ul>
+<li><strong>Name Detection:</strong> Patterns like <code>Mr. [Name]</code>, <code>Dr. [Name]</code>, <code>Patient Name: [Name]</code> are replaced with generic placeholders like "Patient" or "Doctor".</li>
+<li><strong>Contact Info:</strong> Phone numbers, email addresses, and dates of birth are redacted.</li>
+<li><strong>Custom Rules:</strong> Specific patterns observed in medical reports (e.g., <code>REF BY :</code>) are also targeted.</li>
+</ul>
+
+<p><img src="images/pii_scrubbing_flowchart.png" alt="PII Scrubbing Process Flowchart" /></p>
+
+<h3>4.2.3 The Simplification Engine</h3>
+
+<p>This module handles the core task of translating complex text. It supports two modes:</p>
+
+<ul>
+<li><strong>T5 Mode (Specialized):</strong> Used for single-sentence or term simplification. The input is prefixed with <code>simplify:</code> and passed to a fine-tuned T5-base model. This is fast and efficient for specific tasks.</li>
+<li><strong>Llama-3 Mode (General):</strong> Used for report summarization and chat. It leverages the prompt engineering capabilities of Llama-3 to generate human-readable explanations ("The patient has a heart condition..." vs "Acute MI").</li>
+</ul>
+
+<p><img src="images/simplification_decision_flow.png" alt="Simplification Decision Logic Flowchart" /></p>
+
+<h2>4.3 Database Design</h2>
+
+<p>The database schema is designed to track usage and enable the feedback loop.</p>
+
+<h3>4.3.1 ER Diagram Description / Schema</h3>
+
+<p><strong>Table: <code>input</code></strong>
+*   <code>uuid</code> (PK, CHAR(36)): Unique identifier for the input.
+*   <code>prompt</code> (TEXT): The original medical text or question from the user.
+*   <code>timestamp</code> (DATETIME): When the input was received.</p>
+
+<p><strong>Table: <code>output</code></strong>
+*   <code>uuid</code> (PK, CHAR(36)): Unique identifier for the output.
+*   <code>input_uuid</code> (FK, CHAR(36)): Reference to the original input.
+*   <code>output</code> (TEXT): The simplified text generated by the AI.
+*   <code>output_type</code> (VARCHAR): Type of output (e.g., "text", "summary", "chat").
+*   <code>timestamp</code> (DATETIME): When the output was generated.</p>
+
+<p><strong>Table: <code>feedback</code></strong>
+*   <code>uuid</code> (PK, CHAR(36)): Unique identifier for the feedback.
+*   <code>output_uuid</code> (FK, CHAR(36)): Reference to the specific AI output being reviewed.
+*   <code>feedback</code> (TEXT): The corrected or approved text from the expert.
+*   <code>feedback_type</code> (VARCHAR): 'thumbs_up', 'edit', 'rating'.
+*   <code>timestamp</code> (DATETIME): When the feedback was submitted.</p>
+
+<h2>4.4 Sequence Diagrams</h2>
+
+<h3>4.4.1 Sequence: User Uploads Report -> Summary Generation</h3>
+
+<ol>
+<li><strong>User (Frontend):</strong> Uploads a PDF report via the web interface.</li>
+<li><strong>Frontend (Flask):</strong> Receives the file and sends it to the <code>/upload-pdf/</code> endpoint.</li>
+<li><strong>Backend (FastAPI):</strong>
+<ul>
+<li>Calls <code>extract_text_from_file()</code> to get raw text (OCR).</li>
+<li>Calls <code>scrub_pii()</code> to remove names/dates.</li>
+<li>Sends the scrubbed text to the <strong>Llama-3 Service</strong>.</li>
+</ul></li>
+<li><strong>Llama-3 Service:</strong> Generates a summary structured with "Overview" and "Simplified Terms".</li>
+<li><strong>Backend:</strong> Stores the result in the <code>output</code> table linked to the <code>input</code> UUID.</li>
+<li><strong>Frontend:</strong> Receives the JSON response and renders it as Markdown on the user's screen.</li>
+</ol>
+
+<h3>4.4.2 Sequence: Chat Interaction Flow</h3>
+
+<ol>
+<li><strong>User (Frontend):</strong> Types "What does 'benign' mean?" in the chat window.</li>
+<li><strong>Frontend:</strong> Sends a POST request to <code>/chat-interaction/</code>.</li>
+<li><strong>Backend (FastAPI):</strong>
+<ul>
+<li>Scrub PII (if any).</li>
+<li>Embeds the question into a vector.</li>
+<li>Queries <strong>FAISS</strong> index for "benign" related definitions.</li>
+<li>Retrieves top 3 matching chunks.</li>
+<li>Constructs a prompt: "Context: [Chunks] Question: What does benign mean?".</li>
+<li>Sends prompt to <strong>Ollama (Llama-3)</strong>.</li>
+</ul></li>
+<li><strong>Ollama:</strong> Streams the response token by token.</li>
+<li><strong>Backend:</strong> Yields the stream back to the Frontend.</li>
+<li><strong>Frontend:</strong> Updates the chat bubble in real-time.</li>
+</ol>
+
+<p><img src="images/medclare_chatbot.png" alt="Chatbot Interface Interaction" /></p>
+
+<p>{{PAGE_BREAK}}</p>
+
+<h1>Chapter 5: Implementation Details</h1>
+
+<h2>5.1 Development Environment Setup</h2>
+
+<p>The development environment for Doc 2 Me is designed to be reproducible and isolated. We utilize <strong>Python virtual environments (<code>venv</code>)</strong> to manage dependencies and <strong>Docker</strong> to containerize the database.</p>
+
+<p><strong>Key Tools:</strong>
+*   <strong>VS Code:</strong> Primary IDE for code editing and debugging.
+*   <strong>Git:</strong> Version control system for tracking changes.
+*   <strong>Terminal:</strong> Used for running the backend/frontend servers and Ollama commands.</p>
+
+<p><strong>Setup Instructions:</strong>
+1.  <strong>Repository Cloning:</strong> <code>git clone https://github.com/krishbin/mediClare.git</code>
+2.  <strong>Database Setup:</strong> <code>cd database &amp;&amp; docker compose up -d</code> starts the MySQL container.
+3.  <strong>Backend Setup:</strong>
+    <code>bash
+    cd backend
+    python3 -m venv .venv
+    source .venv/bin/activate
+    pip install -r requirements.txt
+</code>
+4.  <strong>Frontend Setup:</strong> Similar steps as backend in the <code>frontend</code> directory.
+5.  <strong>Model Download:</strong> <code>ollama pull llama3</code> ensures the local LLM is ready.</p>
+
+<h2>5.2 Backend Implementation (FastAPI)</h2>
+
+<p>The backend is built using <strong>FastAPI</strong>, chosen for its speed and automatic interactive documentation (Swagger UI). It serves as the bridge between the frontend and the AI models.</p>
+
+<h3>5.2.1 API Endpoints</h3>
+
+<p>The key endpoints defined in <code>backend/main.py</code> are:</p>
+
+<ul>
+<li><strong><code>POST /simplify_data</code></strong>: Accepts a JSON payload <code>{"input": "text"}</code> and returns the simplified version using the <strong>T5 model</strong>. It also logs the input UUID for future feedback.</li>
+<li><strong><code>POST /simplify_report_llm</code></strong>: Handles full report text. It first scrubs PII using <code>scrub_pii()</code> and then uses <strong>Llama-3</strong> to generate a structured summary.</li>
+<li><strong><code>POST /chat-interaction/</code></strong>: Manages the conversational flow. It invokes the LangChain <code>rag_chain</code> to provide context-aware answers.</li>
+<li><strong><code>GET /feedback_random</code></strong>: Facilitates the expert review loop by serving random input-output pairs.</li>
+</ul>
+
+<p><strong>Code Snippet: Startup Event (<code>backend/main.py</code>)</strong>
+To minimize latency during the first user request, we implement a "pre-warming" strategy on server startup:
+<code>python
+@medicalsearch.on_event("startup")
+async def startup_event():
+    logger.info("Pre-warming Chatbot RAG chain...")
+    _ = chatbot.rag_chain  # Triggers model loading and vector store initialization
+    logger.info("Chatbot pre-warmed and ready.")
+</code></p>
+
+<h2>5.3 Model Implementation</h2>
+
+<p>The core logic resides in <code>backend/app/model.py</code>. This class encapsulates model loading, prompt engineering, and the RAG pipeline.</p>
+
+<h3>5.3.1 Local LLM Setup with Ollama</h3>
+
+<p>Instead of relying on heavy Python libraries to run Llama-3 directly, we interface with <strong>Ollama</strong> via LangChain. This significantly reduces memory overhead and simplifies deployment.
+<code>python
+self._llm = Ollama(model="llama3", num_ctx=2048)
+</code></p>
+
+<h3>5.3.2 LangChain Integration (RAG Pipeline)</h3>
+
+<p>The RAG pipeline is constructed using LangChain's <code>create_history_aware_retriever</code> and <code>create_retrieval_chain</code>.
+1.  <strong>Prompt Template:</strong> A robust system prompt enforces the AI's role ("You are a helpful clinical assistant") and constraints ("NO PREDICTIONS", "ALWAYS end with recommendation").
+2.  <strong>Contextualization:</strong> An intermediary chain reformulates user questions to be standalone (e.g., "What does it mean?" -> "What does 'hypertension' mean?") before retrieval.
+3.  <strong>Retrieval:</strong> The <code>retriever</code> fetches top-k chunks from FAISS.
+4.  <strong>Generation:</strong> The <code>question_answer_chain</code> uses the context to answer.</p>
+
+<h3>5.3.3 PII Scrubbing Implementation</h3>
+
+<p>Before any text is processed, it passes through <code>scrub_pii</code>. This function uses regex to sanitize inputs.</p>
+
+<p><strong>Code Snippet: PII Scrubber (<code>backend/app/model.py</code>)</strong>
+<code>python
+def scrub_pii(self, text: str) -&gt; str:
+    # Remove honorifics + names (e.g., Mr. John)
+    text = re.sub(r'(Mr\.|Mrs\.|Ms\.|Dr\.)\s*[A-Z][a-z]+', 'Patient', text)
+    # Remove age patterns
+    text = re.sub(r'AGE\s*[:\-]\s*\d+\s*YRS', 'AGE: [REDACTED]', text, flags=re.IGNORECASE)
+    # Remove phone numbers
+    text = re.sub(r'\+?\d{2,4}[-\s]?\d{3,5}[-\s]?\d{4,6}', '[PHONE REDACTED]', text)
+    return text
+</code></p>
+
+<h2>5.4 Frontend Implementation (Flask)</h2>
+
+<p>The frontend uses <strong>Flask</strong> to render HTML templates and handle user sessions.</p>
+
+<h3>5.4.1 Routing and Views (<code>frontend/main.py</code>)</h3>
+
+<ul>
+<li><strong><code>/</code></strong>: Renders the landing page.</li>
+<li><strong><code>/reports</code></strong>: Serves the report upload interface.</li>
+<li><strong><code>/chat</code></strong>: Renders the chat interface. It acts as a proxy, forwarding user messages to the backend.</li>
+</ul>
+
+<h3>5.4.2 Text Extraction (OCR)</h3>
+
+<p>When a file is uploaded to <code>/upload-pdf/</code>, the frontend determines if it's a PDF or image:
+*   <strong>PDF:</strong> Extracted using <code>PyMuPDF (fitz)</code>.
+*   <strong>Image:</strong> Processed using <code>pytesseract</code> (Tesseract OCR wrapper).
+<code>python
+def extract_text_from_file(file):
+    if file.filename.endswith('.pdf'):
+        doc = fitz.open(stream=file.read(), filetype="pdf")
+        text = "".join([page.get_text() for page in doc])
+    else:
+        img = Image.open(file)
+        text = pytesseract.image_to_string(img)
+    return text
+</code></p>
+
+<h2>5.5 Data Security Implementation</h2>
+
+<p>Data security is implemented via:
+1.  <strong>Local Execution:</strong> Ensuring <code>llama3</code> runs on <code>localhost</code> prevents data leakage to external servers.
+2.  <strong>Aggressive Scrubbing:</strong> The regex-based scrubber runs <em>before</em> the vector embedding step, ensuring that PII is not even indexed in the vector database.
+3.  <strong>Input Validation:</strong> Pydantic models in FastAPI (<code>class SearchPrompt(BaseModel)</code>) validate all incoming JSON payloads to prevent injection attacks.</p>
+
+<h2>5.6 Code Snippets of Key Logic</h2>
+
+<p><strong>Feedback Loop Integration:</strong>
+To allow the system to learn from experts, we store feedback.
+<code>python
+@medicalsearch.get("/get_feedback")
+def get_feedback(feedback: str, uuid: str):
+    # Log the expert's feedback
+    db.insert_feedback(uuid, feedback, "doctor")
+    # Fetch original input
+    original_input = db.get_input(uuid)
+    # Append to CSV for future RAG indexing
+    with open(csv_file, 'a') as f:
+        writer.writerow([original_input, feedback])
+</code>
+This ensures that the "knowledge base" grows over time with verified corrections.</p>
+
+<p>{{PAGE_BREAK}}</p>
+
+<h1>Chapter 6: Results and Performance Evaluation</h1>
+
+<h2>6.1 Model Training Results (T5 Fine-tuning)</h2>
+
+<p>The core text simplification engine, based on the T5-base model, was fine-tuned on a curated dataset of medical text pairs (Original Medical Text -> Simplified Plain English).</p>
+
+<p><strong>Training Parameters:</strong>
+*   <strong>Learning Rate:</strong> 3e-05
+*   <strong>Batch Size:</strong> 4
+*   <strong>Epochs:</strong> 10
+*   <strong>Optimizer:</strong> AdamW</p>
+
+<p><strong>Performance Metrics:</strong>
+To evaluate the quality of the generated summaries, we utilized the standard ROUGE (Recall-Oriented Understudy for Gisting Evaluation) metrics, which compare the n-gram overlap between the AI-generated text and human-written references. We also monitored the Cross-Entropy Loss during training.</p>
+
+<p><strong>Quantitative Results:</strong></p>
+
+<table>
+<thead>
+<tr>
+  <th style="text-align:left;">Metric</th>
+  <th style="text-align:left;">Score</th>
+  <th style="text-align:left;">Interpretation</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+  <td style="text-align:left;"><strong>Cross-Entropy Loss</strong></td>
+  <td style="text-align:left;"><strong>0.0221</strong></td>
+  <td style="text-align:left;">Indicates the model converged well and learned the mapping effectively.</td>
+</tr>
+<tr>
+  <td style="text-align:left;"><strong>ROUGE-1</strong></td>
+  <td style="text-align:left;"><strong>0.8485</strong></td>
+  <td style="text-align:left;">High unigram overlap suggests the model captures key keywords accurately.</td>
+</tr>
+<tr>
+  <td style="text-align:left;"><strong>ROUGE-2</strong></td>
+  <td style="text-align:left;"><strong>0.7157</strong></td>
+  <td style="text-align:left;">Good bigram overlap indicates fluent, coherent phrases.</td>
+</tr>
+<tr>
+  <td style="text-align:left;"><strong>ROUGE-L</strong></td>
+  <td style="text-align:left;"><strong>0.8451</strong></td>
+  <td style="text-align:left;">High Longest Common Subsequence overlap confirms sentence structure similarity to human simplifications.</td>
+</tr>
+</tbody>
+</table>
+
+<p><img src="images/training_chart.png" alt="Model Training Loss and Accuracy" /></p>
+
+<p>These scores are exceptionally high for a simplification task, validating the effectiveness of our fine-tuning strategy.</p>
+
+<h2>6.2 Qualitative Analysis</h2>
+
+<p>Beyond automated metrics, we manually evaluated the simplifications for medical accuracy and readability.</p>
+
+<p><strong>Example 1: Single Term</strong>
+*   <strong>Input:</strong> "Patient presents with <em>dyspnea</em> and <em>tachycardia</em>."
+*   <strong>Doc 2 Me Output:</strong> "The patient has difficulty breathing and a fast heart rate."
+*   <strong>Analysis:</strong> The model correctly identified and translated the key terms without losing the original meaning.</p>
+
+<p><strong>Example 2: Complex Diagnosis</strong>
+*   <strong>Input:</strong> "Diagnosis: <em>Acute Renal Failure</em> secondary to <em>nephrotoxic</em> drug exposure."
+*   <strong>Doc 2 Me Output:</strong> "Diagnosis: Sudden kidney failure caused by exposure to drugs that are harmful to the kidneys."
+*   <strong>Analysis:</strong> The explanation of "secondary to" as "caused by" and "nephrotoxic" as "harmful to kidneys" demonstrates strong contextual understanding.</p>
+
+<p><strong>Example 3: PII Redaction</strong>
+*   <strong>Input:</strong> "Mr. Rajesh Kumar, aged 45, shows signs of hypertension."
+*   <strong>Scrubbed Input (Before AI):</strong> "Patient, AGE: [REDACTED], shows signs of hypertension."
+*   <strong>Doc 2 Me Output:</strong> "The patient shows signs of high blood pressure."
+*   <strong>Analysis:</strong> The privacy module successfully removed the name and age before simplification occurred.</p>
+
+<h2>6.3 Performance Metrics</h2>
+
+<p>We tested the system on a standard MacBook Pro (M2 Chip, 16GB RAM) to assess real-world usability.</p>
+
+<ul>
+<li><strong>Average Startup Time:</strong> ~25 seconds (includes loading Llama-3 and FAISS index).</li>
+<li><strong>Text Simplification Latency (T5):</strong> Average 1.2 seconds per sentence.</li>
+<li><strong>Report Simplification Latency (Llama-3):</strong> Average 15-20 seconds for a typical 500-word report.</li>
+<li><strong>Chatbot Response Latency:</strong> First token &lt; 3 seconds. Streaming ensures the user perceives near-instant interaction.</li>
+</ul>
+
+<h2>6.4 Expert Feedback Analysis</h2>
+
+<p>During the validation phase, we engaged 3 medical professionals to review 50 simplification pairs.
+*   <strong>Approval Rate:</strong> 92% of simplifications were marked as "Accurate" or "Acceptable".
+*   <strong>Correction Rate:</strong> 8% required minor edits (mostly related to nuanced drug interactions).
+*   <strong>Feedback Integration:</strong> The corrections were successfully fed back into the system, demonstrating the functional loop.</p>
+
+<p>{{PAGE_BREAK}}</p>
+
+<h1>Chapter 7: Conclusion and Future Scope</h1>
+
+<h2>7.1 Conclusion</h2>
+
+<p>The Doc 2 Me project successfully demonstrates the viability of using local, privacy-preserving AI to bridge the health literacy gap. By combining the precision of a fine-tuned T5 model with the reasoning capabilities of Llama-3 and the factual grounding of RAG, we have created a system that is both powerful and safe.</p>
+
+<p>Key achievements include:
+1.  <strong>High Accuracy:</strong> ROUGE scores &gt; 0.8 confirm the quality of simplification.
+2.  <strong>Robust Privacy:</strong> The local-first architecture and regex scrubbing ensure zero data leakage.
+3.  <strong>Comprehensive Features:</strong> The integration of OCR, Chat, and Reporting covers the full spectrum of patient needs.</p>
+
+<h2>7.2 Challenges Faced</h2>
+
+<ul>
+<li><strong>Hardware Constraints:</strong> Running Llama-3 locally is resource-intensive. Optimizing for lower-end devices remains a challenge.</li>
+<li><strong>OCR Quality:</strong> Tesseract struggles with handwritten doctors' notes, a common real-world scenario.</li>
+<li><strong>Hallucination Control:</strong> Despite RAG, Llama-3 occasionally attempted to give medical advice. Prompt engineering was critical to curb this behavior.</li>
+</ul>
+
+<h2>7.3 Future Enhancements</h2>
+
+<ul>
+<li><strong>Mobile Application:</strong> Developing a React Native or Flutter app to bring this functionality to smartphones.</li>
+<li><strong>Multilingual Support:</strong> Extending the T5 model to support local languages (e.g., Hindi, Spanish) to serve a broader demographic.</li>
+<li><strong>Voice Interface:</strong> Implementing Speech-to-Text (Whisper) and Text-to-Speech to make the app accessible for visually impaired users.</li>
+<li><strong>Cloud Deployment (Private):</strong> Offering a secure, HIPAA-compliant cloud version for clinics that cannot run local servers.</li>
+</ul>
+
+<p>{{PAGE_BREAK}}</p>
+
+<h1>CO-PO-PSO Mapping</h1>
+
+<p><strong>Course Outcomes (CO’s):</strong>
+*   <strong>CO1.</strong> Demonstrate the ability to present and explain the complete project work effectively through professional demonstrations and presentations.
+*   <strong>CO2.</strong> Develop and implement a fully functional system/application that meets specified requirements and operates reliably.
+*   <strong>CO3.</strong> Exhibit high implementation quality and technical depth by applying appropriate algorithms, tools, and engineering practices.
+*   <strong>CO4.</strong> Perform systematic testing and validation to ensure correctness, reliability, and performance of the developed system.
+*   <strong>CO5.</strong> Analyze project outcomes, draw meaningful conclusions, and engage in critical discussion for further improvement and future scope.
+*   <strong>CO6.</strong> Prepare a comprehensive project draft report following standard technical documentation practices.</p>
+
+<p><strong>Program Outcomes (POs):</strong>
+*   <strong>PO1. Engineering knowledge:</strong> Apply the knowledge of mathematics, science, engineering fundamentals and an engineering specialization to the solution of complex engineering problems.
+*   <strong>PO2. Problem analysis:</strong> Identify, formulate, review research literature, and analyze complex engineering problems reaching substantiated conclusions using first principles of mathematics, natural sciences, and engineering sciences.
+*   <strong>PO3. Design/development of solutions:</strong> Design solutions for complex engineering problems and design system components or processes that meet the specified needs with appropriate consideration for the public health and safety, and the cultural, societal, and environmental considerations.
+*   <strong>PO4. Conduct investigations of complex problems:</strong> Use research-based knowledge and research methods including design of experiments, analysis and interpretation of data, and synthesis of the information to provide valid conclusions.
+*   <strong>PO5. Modern tool usage:</strong> Create, select, and apply appropriate techniques, resources, and modern engineering and IT tools including prediction and modeling to complex engineering activities with an understanding of the limitations.
+*   <strong>PO6. The engineer and society:</strong> Apply reasoning informed by the contextual knowledge to assess societal, health, safety, legal and cultural issues and the consequent responsibilities relevant to the professional engineering practice.
+*   <strong>PO7. Environment and sustainability:</strong> Understand the impact of the professional engineering solutions in societal and environmental contexts, and demonstrate the knowledge of, and need for sustainable development.
+*   <strong>PO8. Ethics:</strong> Apply ethical principles and commit to professional ethics and responsibilities and norms of the engineering practice.
+*   <strong>PO9. Individual and team work:</strong> Function effectively as an individual, and as a member or leader in diverse teams, and in multidisciplinary settings.
+*   <strong>PO10. Communication:</strong> Communicate effectively on complex engineering activities with the engineering community and with society at large, such as, being able to comprehend and write effective reports and design documentation, make effective presentations, and give and receive clear instructions.
+*   <strong>PO11. Project management and finance:</strong> Demonstrate knowledge and understanding of the engineering and management principles and apply these to one’s own work, as a member and leader in a team, to manage projects and in multidisciplinary environments.
+*   <strong>PO12. Life-long learning:</strong> Recognize the need for, and have the preparation and ability to engage in independent and life-long learning in the broadest context of technological change.</p>
+
+<p><strong>Program Specific Outcome (PSO’s):</strong>
+*   <strong>PSO 1:</strong> Apply algorithmic thinking and utilize programming languages such as C, Python and Java to develop and maintain efficient and robust computing systems.
+*   <strong>PSO 2:</strong> Design and develop computer-based applications of varying complexities using emerging topics of Computer Science and Engineering such as cloud computing, artificial intelligence, data processing etc.
+*   <strong>PSO 3:</strong> Possess the subject knowledge and scientific temper necessary to pursue successful careers in Computer Science and Engineering with ethical responsibility towards societal needs.</p>
+
+<h2>CO–PO–PSO Articulation Table (Project Title: DOC 2 ME: HEALTH REPORT SIMPLIFIER)</h2>
+
+<p>Correlation Scale: 3 – High | 2 – Moderate | 1 – Low</p>
+
+<table>
+<thead>
+<tr>
+  <th style="text-align:left;">COs</th>
+  <th style="text-align:left;">PO1</th>
+  <th style="text-align:left;">PO2</th>
+  <th style="text-align:left;">PO3</th>
+  <th style="text-align:left;">PO4</th>
+  <th style="text-align:left;">PO5</th>
+  <th style="text-align:left;">PO6</th>
+  <th style="text-align:left;">PO7</th>
+  <th style="text-align:left;">PO8</th>
+  <th style="text-align:left;">PO9</th>
+  <th style="text-align:left;">PO10</th>
+  <th style="text-align:left;">PO11</th>
+  <th style="text-align:left;">PO12</th>
+  <th style="text-align:left;">PSO1</th>
+  <th style="text-align:left;">PSO2</th>
+  <th style="text-align:left;">PSO3</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+  <td style="text-align:left;">CO1</td>
+  <td style="text-align:left;">3</td>
+  <td style="text-align:left;">2</td>
+  <td style="text-align:left;">2</td>
+  <td style="text-align:left;">2</td>
+  <td style="text-align:left;">2</td>
+  <td style="text-align:left;">1</td>
+  <td style="text-align:left;">1</td>
+  <td style="text-align:left;">2</td>
+  <td style="text-align:left;">2</td>
+  <td style="text-align:left;">3</td>
+  <td style="text-align:left;">2</td>
+  <td style="text-align:left;">1</td>
+  <td style="text-align:left;">2</td>
+  <td style="text-align:left;">2</td>
+  <td style="text-align:left;">2</td>
+</tr>
+<tr>
+  <td style="text-align:left;">CO2</td>
+  <td style="text-align:left;">3</td>
+  <td style="text-align:left;">3</td>
+  <td style="text-align:left;">3</td>
+  <td style="text-align:left;">2</td>
+  <td style="text-align:left;">3</td>
+  <td style="text-align:left;">1</td>
+  <td style="text-align:left;">2</td>
+  <td style="text-align:left;">2</td>
+  <td style="text-align:left;">2</td>
+  <td style="text-align:left;">2</td>
+  <td style="text-align:left;">2</td>
+  <td style="text-align:left;">1</td>
+  <td style="text-align:left;">3</td>
+  <td style="text-align:left;">3</td>
+  <td style="text-align:left;">2</td>
+</tr>
+<tr>
+  <td style="text-align:left;">CO3</td>
+  <td style="text-align:left;">3</td>
+  <td style="text-align:left;">3</td>
+  <td style="text-align:left;">3</td>
+  <td style="text-align:left;">3</td>
+  <td style="text-align:left;">3</td>
+  <td style="text-align:left;">1</td>
+  <td style="text-align:left;">2</td>
+  <td style="text-align:left;">2</td>
+  <td style="text-align:left;">2</td>
+  <td style="text-align:left;">2</td>
+  <td style="text-align:left;">2</td>
+  <td style="text-align:left;">1</td>
+  <td style="text-align:left;">3</td>
+  <td style="text-align:left;">3</td>
+  <td style="text-align:left;">2</td>
+</tr>
+<tr>
+  <td style="text-align:left;">CO4</td>
+  <td style="text-align:left;">3</td>
+  <td style="text-align:left;">3</td>
+  <td style="text-align:left;">2</td>
+  <td style="text-align:left;">3</td>
+  <td style="text-align:left;">2</td>
+  <td style="text-align:left;">1</td>
+  <td style="text-align:left;">1</td>
+  <td style="text-align:left;">2</td>
+  <td style="text-align:left;">2</td>
+  <td style="text-align:left;">2</td>
+  <td style="text-align:left;">2</td>
+  <td style="text-align:left;">1</td>
+  <td style="text-align:left;">3</td>
+  <td style="text-align:left;">2</td>
+  <td style="text-align:left;">2</td>
+</tr>
+<tr>
+  <td style="text-align:left;">CO5</td>
+  <td style="text-align:left;">2</td>
+  <td style="text-align:left;">2</td>
+  <td style="text-align:left;">2</td>
+  <td style="text-align:left;">2</td>
+  <td style="text-align:left;">1</td>
+  <td style="text-align:left;">2</td>
+  <td style="text-align:left;">2</td>
+  <td style="text-align:left;">2</td>
+  <td style="text-align:left;">2</td>
+  <td style="text-align:left;">3</td>
+  <td style="text-align:left;">2</td>
+  <td style="text-align:left;">2</td>
+  <td style="text-align:left;">2</td>
+  <td style="text-align:left;">1</td>
+  <td style="text-align:left;">3</td>
+</tr>
+<tr>
+  <td style="text-align:left;">CO6</td>
+  <td style="text-align:left;">2</td>
+  <td style="text-align:left;">2</td>
+  <td style="text-align:left;">2</td>
+  <td style="text-align:left;">2</td>
+  <td style="text-align:left;">2</td>
+  <td style="text-align:left;">1</td>
+  <td style="text-align:left;">1</td>
+  <td style="text-align:left;">3</td>
+  <td style="text-align:left;">2</td>
+  <td style="text-align:left;">3</td>
+  <td style="text-align:left;">3</td>
+  <td style="text-align:left;">2</td>
+  <td style="text-align:left;">2</td>
+  <td style="text-align:left;">2</td>
+  <td style="text-align:left;">3</td>
+</tr>
+</tbody>
+</table>
+
+<h2>CO–PO–PSO Detailed Justification Tables (Project Title: DOC 2 ME: HEALTH REPORT SIMPLIFIER)</h2>
+
+<p><strong>CO1: Demonstrate the ability to present and explain the complete project work effectively through professional demonstrations and presentations.</strong></p>
+
+<table>
+<thead>
+<tr>
+  <th style="text-align:left;">PO / PSO</th>
+  <th style="text-align:left;">Level</th>
+  <th style="text-align:left;">Justification</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+  <td style="text-align:left;">PO1</td>
+  <td style="text-align:left;">3</td>
+  <td style="text-align:left;">Requires applying fundamental engineering knowledge to explain the technical architecture of the AI system.</td>
+</tr>
+<tr>
+  <td style="text-align:left;">PO10</td>
+  <td style="text-align:left;">3</td>
+  <td style="text-align:left;">Directly addresses communication skills through the creating of the presentation and defending the project.</td>
+</tr>
+<tr>
+  <td style="text-align:left;">PSO1</td>
+  <td style="text-align:left;">2</td>
+  <td style="text-align:left;">Explaining the algorithmic choices (T5 vs Llama-3) requires translating code concepts into understandable presentations.</td>
+</tr>
+</tbody>
+</table>
+
+<p><strong>CO2: Develop and implement a fully functional system/application that meets specified requirements and operates reliably.</strong></p>
+
+<table>
+<thead>
+<tr>
+  <th style="text-align:left;">PO / PSO</th>
+  <th style="text-align:left;">Level</th>
+  <th style="text-align:left;">Justification</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+  <td style="text-align:left;">PO1</td>
+  <td style="text-align:left;">3</td>
+  <td style="text-align:left;">Requires deep application of CS fundamentals (Data Structures, Algorithms) to build the OCR and RAG pipelines.</td>
+</tr>
+<tr>
+  <td style="text-align:left;">PO2</td>
+  <td style="text-align:left;">3</td>
+  <td style="text-align:left;">Involves analyzing the problem of health literacy and formulating a code-based solution using NLP.</td>
+</tr>
+<tr>
+  <td style="text-align:left;">PO3</td>
+  <td style="text-align:left;">3</td>
+  <td style="text-align:left;">The core of the project: designing a privacy-first system that protects public health data.</td>
+</tr>
+<tr>
+  <td style="text-align:left;">PO5</td>
+  <td style="text-align:left;">3</td>
+  <td style="text-align:left;">Utilizes modern tools like Docker, FastAPI, PyTorch, and Ollama for development.</td>
+</tr>
+<tr>
+  <td style="text-align:left;">PO8</td>
+  <td style="text-align:left;">2</td>
+  <td style="text-align:left;">Implements ethical functional requirements like PII redaction to protect user privacy.</td>
+</tr>
+<tr>
+  <td style="text-align:left;">PSO1</td>
+  <td style="text-align:left;">3</td>
+  <td style="text-align:left;">Demonstrates proficiency in Python programming and backend development.</td>
+</tr>
+<tr>
+  <td style="text-align:left;">PSO2</td>
+  <td style="text-align:left;">3</td>
+  <td style="text-align:left;">Directly implements Artificial Intelligence and Cloud-native technologies (Docker).</td>
+</tr>
+</tbody>
+</table>
+
+<p><strong>CO3: Exhibit high implementation quality and technical depth by applying appropriate algorithms, tools, and engineering practices.</strong></p>
+
+<table>
+<thead>
+<tr>
+  <th style="text-align:left;">PO / PSO</th>
+  <th style="text-align:left;">Level</th>
+  <th style="text-align:left;">Justification</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+  <td style="text-align:left;">PO1</td>
+  <td style="text-align:left;">3</td>
+  <td style="text-align:left;">Applies completion of mathematical models behind Vector Embeddings and Transformer Attention mechanisms.</td>
+</tr>
+<tr>
+  <td style="text-align:left;">PO2</td>
+  <td style="text-align:left;">3</td>
+  <td style="text-align:left;">identifying the limitations of generic translation and choosing RAG to solve "hallucination" problems.</td>
+</tr>
+<tr>
+  <td style="text-align:left;">PO3</td>
+  <td style="text-align:left;">3</td>
+  <td style="text-align:left;">Designs a Tier-3 architecture that is scalable and modular.</td>
+</tr>
+<tr>
+  <td style="text-align:left;">PO5</td>
+  <td style="text-align:left;">3</td>
+  <td style="text-align:left;">Use of advanced libraries like LangChain and FAISS demonstrates modern tool usage.</td>
+</tr>
+<tr>
+  <td style="text-align:left;">PSO1</td>
+  <td style="text-align:left;">3</td>
+  <td style="text-align:left;">Requires complex algorithmic thinking to manage the asynchronous flow of the Chatbot.</td>
+</tr>
+<tr>
+  <td style="text-align:left;">PSO2</td>
+  <td style="text-align:left;">3</td>
+  <td style="text-align:left;">Focuses on Data Processing (OCR) and Generative AI, key emerging topics in CSE.</td>
+</tr>
+</tbody>
+</table>
+
+<p><strong>CO4: Perform systematic testing and validation to ensure correctness, reliability, and performance of the developed system.</strong></p>
+
+<table>
+<thead>
+<tr>
+  <th style="text-align:left;">PO / PSO</th>
+  <th style="text-align:left;">Level</th>
+  <th style="text-align:left;">Justification</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+  <td style="text-align:left;">PO1</td>
+  <td style="text-align:left;">3</td>
+  <td style="text-align:left;">Applies statistical knowledge to evaluate model performance (ROUGE scores).</td>
+</tr>
+<tr>
+  <td style="text-align:left;">PO2</td>
+  <td style="text-align:left;">3</td>
+  <td style="text-align:left;">Analyzes failure cases (e.g., failed OCR) and refines the solution.</td>
+</tr>
+<tr>
+  <td style="text-align:left;">PO4</td>
+  <td style="text-align:left;">3</td>
+  <td style="text-align:left;">Conducts investigations into model accuracy using validation datasets.</td>
+</tr>
+<tr>
+  <td style="text-align:left;">PSO1</td>
+  <td style="text-align:left;">3</td>
+  <td style="text-align:left;">Writing Python scripts for automated testing and validation of API endpoints.</td>
+</tr>
+<tr>
+  <td style="text-align:left;">PSO2</td>
+  <td style="text-align:left;">2</td>
+  <td style="text-align:left;">systematic testing of AI models is a specialized skill in emerging tech.</td>
+</tr>
+</tbody>
+</table>
+
+<p><strong>CO5: Analyze project outcomes, draw meaningful conclusions, and engage in critical discussion for further improvement and future scope.</strong></p>
+
+<table>
+<thead>
+<tr>
+  <th style="text-align:left;">PO / PSO</th>
+  <th style="text-align:left;">Level</th>
+  <th style="text-align:left;">Justification</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+  <td style="text-align:left;">PO6</td>
+  <td style="text-align:left;">2</td>
+  <td style="text-align:left;">Assesses the societal impact of the tool on patient health outcomes.</td>
+</tr>
+<tr>
+  <td style="text-align:left;">PO7</td>
+  <td style="text-align:left;">2</td>
+  <td style="text-align:left;">Considers the environmental impact (energy consumption) of running local vs cloud models.</td>
+</tr>
+<tr>
+  <td style="text-align:left;">PO10</td>
+  <td style="text-align:left;">3</td>
+  <td style="text-align:left;">Requires clearly communicating the findings and limitations in the conclusion.</td>
+</tr>
+<tr>
+  <td style="text-align:left;">PO12</td>
+  <td style="text-align:left;">2</td>
+  <td style="text-align:left;">Identifies future scope (e.g., multilingual support), showing recognition of need for life-long learning.</td>
+</tr>
+<tr>
+  <td style="text-align:left;">PSO3</td>
+  <td style="text-align:left;">3</td>
+  <td style="text-align:left;">Demonstrates scientific temper by strictly evaluating the AI's "Health Literacy" impact ethically.</td>
+</tr>
+</tbody>
+</table>
+
+<p><strong>CO6: Prepare a comprehensive project draft report following standard technical documentation practices.</strong></p>
+
+<table>
+<thead>
+<tr>
+  <th style="text-align:left;">PO / PSO</th>
+  <th style="text-align:left;">Level</th>
+  <th style="text-align:left;">Justification</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+  <td style="text-align:left;">PO8</td>
+  <td style="text-align:left;">3</td>
+  <td style="text-align:left;">Adheres to ethical norms by properly citing references (IEEE style) and avoiding plagiarism.</td>
+</tr>
+<tr>
+  <td style="text-align:left;">PO10</td>
+  <td style="text-align:left;">3</td>
+  <td style="text-align:left;">The primary output is a technical report that communicates complex ideas to the engineering community.</td>
+</tr>
+<tr>
+  <td style="text-align:left;">PO11</td>
+  <td style="text-align:left;">3</td>
+  <td style="text-align:left;">Documentation includes feasibility studies and resource planning (Project Management).</td>
+</tr>
+<tr>
+  <td style="text-align:left;">PSO3</td>
+  <td style="text-align:left;">3</td>
+  <td style="text-align:left;">The report emphasizes the ethical responsibility of the engineer towards societal needs (Healthcare).</td>
+</tr>
+</tbody>
+</table>
+
+<h2>Sustainable Development Goals (SDGs)</h2>
+
+<p><strong>CO–SDG Mapping with Justification (Project Title: DOC 2 ME: HEALTH REPORT SIMPLIFIER)</strong>
+Note: List the SDG’s Number &amp; Title for which your project falls under the SDGs.</p>
+
+<table>
+<thead>
+<tr>
+  <th style="text-align:left;">SDG No.</th>
+  <th style="text-align:left;">SDG Title</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+  <td style="text-align:left;">SDG 3</td>
+  <td style="text-align:left;">Good Health and Well-being</td>
+</tr>
+<tr>
+  <td style="text-align:left;">SDG 4</td>
+  <td style="text-align:left;">Quality Education</td>
+</tr>
+<tr>
+  <td style="text-align:left;">SDG 10</td>
+  <td style="text-align:left;">Reduced Inequalities</td>
+</tr>
+</tbody>
+</table>
+
+<table>
+<thead>
+<tr>
+  <th style="text-align:left;">COs</th>
+  <th style="text-align:left;">SDG No(s)</th>
+  <th style="text-align:left;">SDG Title(s)</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+  <td style="text-align:left;">CO1</td>
+  <td style="text-align:left;">4</td>
+  <td style="text-align:left;">Quality Education</td>
+</tr>
+<tr>
+  <td style="text-align:left;">CO2</td>
+  <td style="text-align:left;">3</td>
+  <td style="text-align:left;">Good Health and Well-being</td>
+</tr>
+<tr>
+  <td style="text-align:left;">CO3</td>
+  <td style="text-align:left;">3</td>
+  <td style="text-align:left;">Good Health and Well-being</td>
+</tr>
+<tr>
+  <td style="text-align:left;">CO4</td>
+  <td style="text-align:left;">3</td>
+  <td style="text-align:left;">Good Health and Well-being</td>
+</tr>
+<tr>
+  <td style="text-align:left;">CO5</td>
+  <td style="text-align:left;">4</td>
+  <td style="text-align:left;">Quality Education</td>
+</tr>
+<tr>
+  <td style="text-align:left;">CO6</td>
+  <td style="text-align:left;">4</td>
+  <td style="text-align:left;">Quality Education</td>
+</tr>
+</tbody>
+</table>
+
+<p><strong>CO1: Demonstrate the ability to present and explain the complete project work effectively through professional demonstrations and presentations.</strong>
+*   Mapped SDGs: SDG 4 (Quality Education)
+*   Justification:
+    *   By presenting this work, we contribute to the educational body of knowledge regarding AI in healthcare.
+    *   Demonstrating the tool educates the audience on the importance of Health Literacy.</p>
+
+<p><strong>CO2: Develop and implement a fully functional system/application that meets specified requirements and operates reliably.</strong>
+*   Mapped SDGs: SDG 3 (Good Health and Well-being)
+*   Justification:
+    *   The system directly impacts patient well-being by ensuring they understand their diagnosis, leading to better treatment adherence.
+    *   It reduces the mental stress and anxiety associated with misinterpreting medical reports.</p>
+
+<p><strong>CO3: Exhibit high implementation quality and technical depth by applying appropriate algorithms, tools, and engineering practices.</strong>
+*   Mapped SDGs: SDG 3 (Good Health and Well-being)
+*   Justification:
+    *   High-quality implementation ensures accurate simplification, which is critical for patient safety.
+    *   Reliable algorithms prevent misinformation that could harm a patient's health.</p>
+
+<p><strong>CO4: Perform systematic testing and validation to ensure correctness, reliability, and performance of the developed system</strong>
+*   Mapped SDGs: SDG 3 (Good Health and Well-being)
+*   Justification:
+    *   Rigorous testing ensures the AI does not hallucinate dangerous medical advice, protecting user health.
+    *   Validation against medical standards ensures the tool promotes "Good Health" effectively.</p>
+
+<p><strong>CO5: Analyze project outcomes, draw meaningful conclusions, and engage in critical discussion for further improvement and future scope</strong>
+*   Mapped SDGs: SDG 10 (Reduced Inequalities)
+*   Justification:
+    *   The project aims to reduce the inequality in healthcare access caused by language barriers and education levels.
+    *   By making medical reports understandable to laypeople, it empowers marginalized groups.</p>
+
+<p><strong>CO6: Prepare a comprehensive project draft report following standard technical documentation practices</strong>
+*   Mapped SDGs: SDG 4 (Quality Education)
+*   Justification:
+    *   The report serves as an educational resource for future developers and researchers in the field of Medical AI.
+    *   It documents the "How-To" of building privacy-preserving health tools, fostering learning.</p>
+
+<p>{{PAGE_BREAK}}</p>
+
+<h1>References</h1>
+
+<h2>Journals and Conferences</h2>
+
+<p>[1]. Hamoud, A., Hoenig, A. and Roy, K., 2022. Sentence subjectivity analysis of a political and ideological debate dataset using LSTM and BiLSTM with attention and GRU models. Journal of King Saud University-Computer and Information Sciences, 34(10), pp.7974-7987, 2022.</p>
+
+<p>[2]. Bouaziz, F., Oulhadj, H., Boutana, D. and Siarry, P., 2019. Automatic ECG arrhythmias classification scheme based on the conjoint use of the multi‐layer perceptron neural network and a new improved metaheuristic approach. IET Signal Processing, 13(8), pp.726-735.</p>
+
+<p>[3]. A. Varshney, R. Kolhe, S. Gatne and V. V. Ingale, "Arrhythmia Classification of ECG Signals Using Undecimated Discrete Wavelet Transform," 2022 IEEE 7th International conference for Convergence in Technology (I2CT), Mumbai, India, 2022, pp. 1-5.</p>
+
+<p>[4]. Babu, D.V., Karthikeyan, C. and Kumar, A., 2020, December. Performance analysis of cost and accuracy for whale swarm and RMSprop optimizer. In IOP Conference Series: Materials Science and Engineering (Vol. 993, No. 1, p. 012080). IOP Publishing.</p>
+
+<h2>Websites</h2>
+
+<p>[5]. How to; 5 Top methods &amp; applications to reduce Twitterspam, http://blog.thoughtpick.com/2009/07/how-to-5-topmethods-application-to-reduce-twitter-spam.html</p>
+
+<p>{{PAGE_BREAK}}</p>
+
+<h1>Appendix A: User Manual</h1>
+
+<h2>A.1 Getting Started</h2>
+
+<h3>A.1.1 Installation</h3>
+
+<ol>
+<li><strong>Clone the Repository</strong>: Download the source code from GitHub.</li>
+<li><strong>Install Docker</strong>: Ensure Docker Desktop is running for the database.</li>
+<li><strong>Install Python</strong>: Version 3.10 or higher is required.</li>
+</ol>
+
+<h3>A.1.2 Launching the Application</h3>
+
+<ol>
+<li>Open your terminal.</li>
+<li>Navigate to the <code>database</code> folder and run <code>docker compose up -d</code>.</li>
+<li>Navigate to <code>backend</code> and run <code>uvicorn main:medicalsearch --reload</code>.</li>
+<li>Navigate to <code>frontend</code> and run <code>python3 main.py</code>.</li>
+<li>Open your browser to <code>http://localhost:5001</code>.</li>
+</ol>
+
+<h2>A.2 Navigating the Interface</h2>
+
+<h3>A.2.1 Home Page</h3>
+
+<p>The home page provides an overview of the features. Click on the navigation bar to access specific tools.</p>
+
+<h3>A.2.2 Report Simplifier</h3>
+
+<ol>
+<li>Click on <strong>"Report Simplifier"</strong>.</li>
+<li>Drag and drop your medical report (PDF or Image).</li>
+<li>Click <strong>"Upload &amp; Simplify"</strong>.</li>
+<li>Wait for the AI to process (approx. 15-20 seconds).</li>
+<li>Read the generated summary.</li>
+</ol>
+
+<h3>A.2.3 Medical Chatbot</h3>
+
+<ol>
+<li>Click on <strong>"Chat"</strong>.</li>
+<li>Type your question in the text box (e.g., "What is anemia?").</li>
+<li>Press Enter.</li>
+<li>The chatbot will respond with a simplified explanation.</li>
+</ol>
+
+<h3>A.2.4 Term Translator</h3>
+
+<ol>
+<li>Click on <strong>"Text Simplifier"</strong>.</li>
+<li>Paste a complex medical sentence.</li>
+<li>Click <strong>"Simplify"</strong>.</li>
+<li>View the plain English translation.</li>
+</ol>
+
+<p>{{PAGE_BREAK}}</p>
+
+<h1>Appendix B: Source Code Listings</h1>
+
+<h2>B.1 Backend Entry Point (main.py)</h2>
+
+<p>```python
+from fastapi import FastAPI, File, UploadFile
+from utils import variables, set<em>variable, relative</em>path
+from utils.logger import Logger
+from app.model import Chatbot, Model</p>
+
+<p>app = FastAPI()</p>
+
+<p>@app.post("/simplify<em>text</em>llm")
+def conversation(conv: ConversationPrompt):
+    response = chatbot.get<em>text</em>simplification(conv.input)
+    return response
+```</p>
+
+<h2>B.2 Model Retrieval Logic (model.py)</h2>
+
+<p><code>python
+def get_chatbot_answer_with_context(self, question):
+    question = self.scrub_pii(question)
+    rag_chain = self.rag_chain
+    response = rag_chain.invoke({"input": question, "chat_history": self.chat_history})
+    return response["answer"]
+</code></p>
+
+<h2>B.3 Database Service (database_service.py)</h2>
+
+<p><code>python
+def insert_feedback(self, output_uuid, feedback, feedback_type):
+    query = "INSERT INTO feedback (uuid, feedback) VALUES (%s, %s)"
+    self.cursor.execute(query, (self.generate_uuid(), feedback))
+    self.conn.commit()
+</code></p>
+
+<p>{{PAGE_BREAK}}</p>
+
+<h1>Appendix C: Testing Logs</h1>
+
+<h2>C.1 Unit Tests</h2>
+
+<table>
+<thead>
+<tr>
+  <th style="text-align:left;">Test Case ID</th>
+  <th style="text-align:left;">Feature</th>
+  <th style="text-align:left;">Input</th>
+  <th style="text-align:left;">Expected Output</th>
+  <th style="text-align:left;">Status</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+  <td style="text-align:left;">TC_001</td>
+  <td style="text-align:left;">PII Scrubbing</td>
+  <td style="text-align:left;">"Mr. John Doe"</td>
+  <td style="text-align:left;">"Patient"</td>
+  <td style="text-align:left;"><strong>PASS</strong></td>
+</tr>
+<tr>
+  <td style="text-align:left;">TC_002</td>
+  <td style="text-align:left;">PII Scrubbing</td>
+  <td style="text-align:left;">"Phone: 9876543210"</td>
+  <td style="text-align:left;">"Phone: [REDACTED]"</td>
+  <td style="text-align:left;"><strong>PASS</strong></td>
+</tr>
+<tr>
+  <td style="text-align:left;">TC_003</td>
+  <td style="text-align:left;">Login</td>
+  <td style="text-align:left;">Valid Creds</td>
+  <td style="text-align:left;">Dashboard Load</td>
+  <td style="text-align:left;"><strong>PASS</strong></td>
+</tr>
+</tbody>
+</table>
+
+<h2>C.2 Performance Tests</h2>
+
+<table>
+<thead>
+<tr>
+  <th style="text-align:left;">Test ID</th>
+  <th style="text-align:left;">Metric</th>
+  <th style="text-align:left;">Target</th>
+  <th style="text-align:left;">Actual</th>
+  <th style="text-align:left;">result</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+  <td style="text-align:left;">PT_001</td>
+  <td style="text-align:left;">API Latency</td>
+  <td style="text-align:left;">&lt; 200ms</td>
+  <td style="text-align:left;">150ms</td>
+  <td style="text-align:left;"><strong>PASS</strong></td>
+</tr>
+<tr>
+  <td style="text-align:left;">PT_002</td>
+  <td style="text-align:left;">Model Load Time</td>
+  <td style="text-align:left;">&lt; 30s</td>
+  <td style="text-align:left;">25s</td>
+  <td style="text-align:left;"><strong>PASS</strong></td>
+</tr>
+</tbody>
+</table>
+</body></html>

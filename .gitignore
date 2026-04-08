@@ -1,0 +1,50 @@
+# Virtual Environments
+.venv
+venv
+**/venv/
+**/.venv/
+**/__pycache__/
+
+# Large Project Archives
+Medical_Jargon_Project.zip
+*.zip
+archive.zip
+docs.zip
+
+# Models and Large Data
+models/*
+**/models/*
+data/*
+**/data/*
+*.safetensors
+*.faiss
+*.bin
+*.pt
+*.pth
+
+# IDE and System Files
+.idea
+.vscode
+.DS_Store
+*.swp
+*~
+
+# Misc
+.ipynb_checkpoints
+.mypy_cache
+.pytest_cache
+htmlcov
+dist
+site
+.coverage
+coverage.xml
+.netlify
+test.db
+log.txt
+Pipfile.lock
+env3.*
+env
+docs_build
+site_build
+flutter/
+.cache

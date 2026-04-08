@@ -1,0 +1,11 @@
+LIPID PROFILE (FASTING)
+--------------------------------------------------
+Screening for cardiovascular risk factors.
+
+RESULTS:
+Total Cholesterol: 265 * mg/dL (Ref: < 200)
+LDL (Bad): 185 * mg/dL (Ref: < 100)
+HDL (Good): 32 * mg/dL (Ref: > 40)
+Triglycerides: 240 * mg/dL (Ref: < 150)
+
+IMPRESSION: Dyslipidemia with high LDL and low HDL levels. Increased risk for Atherosclerosis. Statins and lifestyle intervention recommended.

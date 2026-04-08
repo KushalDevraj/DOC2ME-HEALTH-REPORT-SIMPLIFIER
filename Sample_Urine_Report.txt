@@ -1,0 +1,11 @@
+ROUTINE URINE ANALYSIS
+--------------------------------------------------
+Clinical correlation with symptoms of dysuria.
+
+RESULTS:
+Appearance: Turbid *  (Ref: Clear)
+Protein: 2+ * mg/dL (Ref: Negative)
+Pus Cells: 20-25 * /HPF (Ref: 0-5)
+Bacteria: Present *  (Ref: Absent)
+
+IMPRESSION: Findings suggestive of Urinary Tract Infection (UTI) and significant Proteinuria as evidenced by pyuria and bacteriuria.
