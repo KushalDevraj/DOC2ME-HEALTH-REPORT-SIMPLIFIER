@@ -391,7 +391,7 @@ The development environment for Doc 2 Me is designed to be reproducible and isol
 *   **Terminal:** Used for running the backend/frontend servers and Ollama commands.
 
 **Setup Instructions:**
-1.  **Repository Cloning:** `git clone https://github.com/krishbin/mediClare.git`
+1.  **Repository Cloning:** `git clone https://github.com/KushalDevraj/DOC2ME-HEALTH-REPORT-SIMPLIFIER.git`
 2.  **Database Setup:** `cd database && docker compose up -d` starts the MySQL container.
 3.  **Backend Setup:**
     ```bash

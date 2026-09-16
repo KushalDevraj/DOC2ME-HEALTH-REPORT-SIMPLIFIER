@@ -50,7 +50,7 @@ Doc 2 Me is an advanced medical jargon simplification system designed to bridge 
    ```bash
    ./run_doc2me_local.sh
    ```
-   Access the web interface at `http://localhost:5000`.
+   Access the web interface at `http://localhost:5001`.
 
 ## 🏗️ Project Architecture
 
